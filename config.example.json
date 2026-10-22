@@ -1,0 +1,10 @@
+{
+  "vaultPath": "~/obsidian-vault",
+  "dailyNotesDir": "",
+  "noteFormat": "YYYY-MM-DD",
+  "timezone": "America/Los_Angeles",
+  "bullet": "*",
+  "template": "daily_note_template.md",
+  "statuses": { ">": "in_progress" },
+  "sync": { "enabled": true }
+}
