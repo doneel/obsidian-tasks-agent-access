@@ -22,7 +22,7 @@ function obConfigDir(): string {
     : path.join(os.homedir(), '.obsidian-headless');
 }
 
-function hasObAuth(): boolean {
+export function hasObAuth(): boolean {
   return Boolean(process.env.OBSIDIAN_AUTH_TOKEN) || fs.existsSync(path.join(obConfigDir(), 'auth_token'));
 }
 
@@ -61,7 +61,7 @@ export function doctor(opts: { offline?: boolean } = {}) {
   if (cfg.sync.enabled && !cfg.sync.command) {
     const ver = runOb(['--version']);
     add('obsidian-headless', ver.ok ? 'ok' : 'error', ver.ok ? `ob ${ver.stdout.trim()}` : 'ob CLI not found; reinstall obsidian-tasks-agent-access or npm i -g obsidian-headless');
-    add('auth', hasObAuth() ? 'ok' : 'error', hasObAuth() ? 'Obsidian account token present' : 'Not logged in: run "ob login" in an interactive terminal or set OBSIDIAN_AUTH_TOKEN');
+    add('auth', hasObAuth() ? 'ok' : 'error', hasObAuth() ? 'Obsidian account token present' : 'Not logged in: the user must run "tasks login" in this machine\'s terminal (or set OBSIDIAN_AUTH_TOKEN)');
     const st = obStatus(cfg.vaultPath);
     if (!st) add('sync-config', 'error', `No Obsidian Sync configuration for ${cfg.vaultPath}. Run "tasks setup --remote-vault <name>".`);
     else {
@@ -174,7 +174,7 @@ export function setup(o: SetupOpts) {
 
   if (cfg.sync!.enabled && !cfg.sync!.command) {
     if (!hasObAuth()) {
-      throw new TasksError('CONFIG', 'Not logged in to Obsidian. The user must run "ob login" once in an interactive terminal (or set OBSIDIAN_AUTH_TOKEN), then re-run setup.', { steps });
+      throw new TasksError('CONFIG', 'Not logged in to Obsidian. Ask the user to take over this computer and run "tasks login" in a terminal (never ask for the password yourself), then run this again. Alternatively set OBSIDIAN_AUTH_TOKEN.', { steps });
     }
     const linked = obStatus(vaultPath);
     if (linked && o.remoteVault && linked.vaultName !== o.remoteVault && linked.vaultId !== o.remoteVault) {
@@ -210,7 +210,7 @@ export function setup(o: SetupOpts) {
 
 /** Environment variables read by `tasks bootstrap` (all optional except TASKS_REMOTE_VAULT on first run). */
 export const BOOTSTRAP_ENV: Record<string, string> = {
-  OBSIDIAN_AUTH_TOKEN: 'Obsidian account token (required unless ob login was run on this machine)',
+  OBSIDIAN_AUTH_TOKEN: 'Obsidian account token (not needed once the user has run "tasks login" on this machine)',
   OBSIDIAN_E2E_PASSWORD: 'vault encryption password, for end-to-end encrypted vaults',
   TASKS_REMOTE_VAULT: 'remote vault name or id (required on first run)',
   TASKS_VAULT_PATH: 'local vault folder (default ~/obsidian-vault)',
@@ -242,7 +242,7 @@ export function bootstrap(o: { skillsDir?: string; offline?: boolean } = {}) {
   if (alreadyConfigured) steps.push(`Already configured (${configPath()}); nothing to set up`);
   else {
     if (!env.TASKS_REMOTE_VAULT && !(prev?.vaultPath && obStatus(vaultPath))) {
-      throw new TasksError('CONFIG', 'Not configured yet. Set TASKS_REMOTE_VAULT (and OBSIDIAN_AUTH_TOKEN) and run "tasks bootstrap" again.', {
+      throw new TasksError('CONFIG', 'Not configured yet. Set TASKS_REMOTE_VAULT (and the other TASKS_* settings) and run "tasks bootstrap" again.', {
         environment: BOOTSTRAP_ENV,
       });
     }

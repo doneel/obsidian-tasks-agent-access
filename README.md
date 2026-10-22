@@ -9,28 +9,27 @@ A small CLI that lets an AI agent search, create and edit [Obsidian Tasks](https
 
 ## Install on an agent
 
-Agents need Node.js 22+, internet access and two secrets.
+Agents need internet access and a shell; nothing else. Node.js 22 is downloaded into `~/.local` if missing (no root needed).
 
-### 1. Get an Obsidian token (once, on your own machine)
+### 1. Log in to Obsidian (once, done by you)
 
-`ob login` asks for your password and 2FA code, so do it yourself rather than through an agent:
+Your Obsidian password and 2FA code should never pass through the agent. After the agent has run the installer (step 3), take over its computer, open a terminal and run:
 
 ```bash
-npx -y obsidian-headless login
-cat ~/.obsidian-headless/auth_token      # Linux: ~/.config/obsidian-headless/auth_token
+tasks login
 ```
 
-Store that value as a secret named `OBSIDIAN_AUTH_TOKEN` in each agent's environment (its platform's secret store, not a prompt or a file). Then delete the local `auth_token` file rather than running `ob logout`, which may revoke the token.
+The token is saved on that machine (`~/.config/obsidian-headless/auth_token` on Linux) and reused by every later session. `tasks login` refuses to run without an interactive terminal, so an agent can't drive it.
 
-The token grants access to your whole Obsidian account (all vaults, Sync, Publish), not just this tool, so treat it like a password. To revoke it, sign out devices or change your password in your Obsidian account settings.
+If your agent platform has a secret store instead, you can skip this: log in once anywhere with `npx -y obsidian-headless login`, copy the token from `~/.obsidian-headless/auth_token` (macOS) or `~/.config/obsidian-headless/auth_token` (Linux), and provide it as `OBSIDIAN_AUTH_TOKEN`. Delete the copied file afterwards rather than running `ob logout`, which may revoke the token.
 
-For end-to-end encrypted vaults, also provide `OBSIDIAN_E2E_PASSWORD`.
+Either way, the token grants access to your whole Obsidian account (all vaults, Sync, Publish), so treat it like a password. To revoke it, sign out devices or change your password in your Obsidian account settings. For end-to-end encrypted vaults, also provide `OBSIDIAN_E2E_PASSWORD`.
 
 ### 2. Configure the agent's environment
 
 | variable | example | notes |
 |---|---|---|
-| `OBSIDIAN_AUTH_TOKEN` | *(secret)* | required |
+| `OBSIDIAN_AUTH_TOKEN` | *(secret)* | only if you're not using `tasks login` |
 | `TASKS_REMOTE_VAULT` | `Personal` | required on first run; see `npx obsidian-headless sync-list-remote` |
 | `TASKS_VAULT_PATH` | `~/obsidian-vault` | default |
 | `TASKS_DAILY_DIR` | `""` | daily notes folder; empty = vault root (default) |
@@ -51,7 +50,9 @@ For end-to-end encrypted vaults, also provide `OBSIDIAN_E2E_PASSWORD`.
 curl -fsSL https://raw.githubusercontent.com/doneel/obsidian-tasks-agent-access/master/install.sh | bash
 ```
 
-This installs the latest release with npm (into `~/.local` if the global prefix isn't writable), then runs `tasks bootstrap`. Bootstrap links the vault, configures selective sync, does the first sync, installs the skill and runs `tasks doctor`. It is idempotent: when the machine is already set up it only runs the health check, so it can go in an agent's session start-up. Pin a version with `TASKS_VERSION=v0.1.0`; force an upgrade with `TASKS_UPGRADE=1`.
+This installs Node.js 22 (official build, checksum-verified) if needed, then the latest release, both under `~/.local`, and adds `~/.local/bin` to `~/.profile` and `~/.bashrc` (`TASKS_NO_PROFILE=1` skips that). Then it runs `tasks bootstrap`, which links the vault, configures selective sync, does the first sync, installs the skill and runs `tasks doctor`.
+
+On the very first run it stops with "Not logged in" until you've done step 1; run it again afterwards. It is idempotent: when the machine is already set up it only runs the health check, so it can go in an agent's session start-up. Pin a version with `TASKS_VERSION=v0.1.1`; force an upgrade with `TASKS_UPGRADE=1`.
 
 Without the script:
 

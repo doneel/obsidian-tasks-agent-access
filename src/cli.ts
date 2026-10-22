@@ -2,11 +2,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
 import { parseArgs, type ParseArgsConfig } from 'node:util';
-import { BOOTSTRAP_ENV, bootstrap, doctor, installSkill, setup } from './admin.js';
+import { BOOTSTRAP_ENV, bootstrap, doctor, hasObAuth, installSkill, setup } from './admin.js';
 import { loadConfig } from './config.js';
 import { TasksError } from './errors.js';
 import * as ops from './ops.js';
+import { obCommand } from './sync.js';
 
 const PKG_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const VERSION = JSON.parse(fs.readFileSync(path.join(PKG_DIR, 'package.json'), 'utf8')).version as string;
@@ -59,6 +61,7 @@ const COMMANDS: Record<string, { options: Opts; positionals?: boolean; usage: st
 
 const HELP = `obsidian-tasks-agent-access ${VERSION} — Obsidian Tasks in your Daily Notes, for agents.
 
+  tasks login   (run by a human, interactively: logs in to your Obsidian account)
 ${Object.values(COMMANDS).map((c) => `  ${c.usage}`).join('\n')}
 
 Global flags: --json (structured output), --no-sync (use local copy only), --allow-stale (read even if sync fails)
@@ -195,6 +198,22 @@ function main(argv: string[]): number {
   if (cmd === '--version' || cmd === 'version') {
     console.log(VERSION);
     return 0;
+  }
+  if (cmd === 'login') {
+    // Interactive Obsidian account login, for a human at the terminal (password and 2FA never go through the agent).
+    if (!process.stdin.isTTY) {
+      console.error('tasks login is interactive: a person must run it in a terminal (it asks for the Obsidian email, password and 2FA code).');
+      return 2;
+    }
+    const [bin, ...pre] = obCommand();
+    const r = spawnSync(bin, [...pre, 'login', ...rest], { stdio: 'inherit' });
+    // ob exits 0 even when the prompt was abandoned, so check that a token was actually stored.
+    if (r.status === 0 && hasObAuth()) {
+      console.log('\nLogged in to Obsidian. You can hand control back to the agent.');
+      return 0;
+    }
+    console.error('\nNot logged in. Run "tasks login" again.');
+    return r.status || 1;
   }
   const json = rest.includes('--json');
   try {

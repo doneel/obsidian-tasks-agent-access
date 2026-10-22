@@ -84,6 +84,6 @@ tasks add --text "Book flights" --field cost=1 --field value=200 --json   # Data
 | `LOCK_TIMEOUT` | Another `tasks` command is running. Wait a few seconds and retry. |
 | `CONFIG` / `PATH_REJECTED` / `USAGE` | Run `tasks doctor --json` and report the failing check to the user. Don't try to work around it. |
 
-If a command fails with `CONFIG` saying it is not configured (for example on a fresh machine), run `tasks bootstrap --json`, which sets everything up from the environment. If that reports missing variables, tell the user which ones are needed. Never ask the user for their Obsidian password.
+If a command fails with `CONFIG` saying it is not configured (for example on a fresh machine), run `tasks bootstrap --json`, which sets everything up from the environment. If that reports missing variables, tell the user which ones are needed. If it says you are not logged in, ask the user to take over your computer, open a terminal and run `tasks login` themselves, then run bootstrap again. Never ask for, type or handle their Obsidian password or token.
 
 `tasks doctor --json` checks installation, login, sync and the daily notes folder. `tasks sync --json` forces a sync. Neither is needed in normal use, because every command syncs on its own.

@@ -1,6 +1,6 @@
 {
   "name": "obsidian-tasks-agent-access",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Agent-friendly CLI for Obsidian Tasks-plugin tasks in a Daily Notes folder, synced with Obsidian Headless Sync",
   "type": "module",
   "bin": {
